@@ -1,12 +1,16 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
 
 st.set_page_config(page_title="DermaScan", layout="wide")
 st.title("🧴 DermaScan: Skin Disease Classifier Dataset Viewer")
 
 # Sidebar navigation
 st.sidebar.title("Navigation")
-option = st.sidebar.radio("Go to", ["Home", "Dataset","Graphs", "Predict"])
+option = st.sidebar.radio("Go to", ["Home", "Dataset", "Graphs", "Predict"])
 
 # Column names
 column_names = [
@@ -28,40 +32,64 @@ column_names = [
 @st.cache_data
 def load_data():
     df = pd.read_csv("dermatology.data", header=None, names=column_names)
-    df.replace("?", pd.NA, inplace=True)
+    df.replace("?", np.nan, inplace=True)
     df["age"] = pd.to_numeric(df["age"], errors="coerce")
     df.dropna(inplace=True)
+    df["class"] = df["class"].astype(int)
     return df
 
 df = load_data()
 
-# Handle different pages
+# Home
 if option == "Home":
     st.subheader("🏠 Welcome to DermaScan")
-    st.markdown("This app helps explore the **UCI Dermatology Dataset** and make predictions.")
+    st.markdown("This app helps explore the **UCI Dermatology Dataset** and predict **skin disease class** using **Machine Learning**.")
     st.image("https://upload.wikimedia.org/wikipedia/commons/0/0d/Skin_disease_icon.png", width=200)
 
+# Dataset tab
 elif option == "Dataset":
     st.subheader("📄 Dataset Preview")
     st.dataframe(df)
 
+# Graphs tab
 elif option == "Graphs":
     st.subheader("📊 Class Distribution")
-    st.bar_chart(df['class'].value_counts())
+    st.bar_chart(df["class"].value_counts())
 
+# Predict tab
 elif option == "Predict":
-    st.subheader("🔍 Filter by Age and Class")
-    min_age, max_age = int(df['age'].min()), int(df['age'].max())
-    age_range = st.slider("Select Age Range", min_age, max_age, (min_age, max_age))
+    st.subheader("🧠 Predict Skin Disease Class")
 
-    class_options = sorted(df["class"].unique())
-    selected_class = st.multiselect("Select Disease Classes", class_options, default=class_options)
+    # Prepare features and labels
+    X = df.drop(columns=["class"])
+    y = df["class"]
 
-    filtered = df[(df["age"] >= age_range[0]) & (df["age"] <= age_range[1]) & (df["class"].isin(selected_class))]
+    # Train-test split
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    st.subheader("📌 Filtered Data")
-    st.dataframe(filtered)
+    # Train model
+    model = RandomForestClassifier()
+    model.fit(X_train, y_train)
 
+    # Show accuracy
+    y_pred = model.predict(X_test)
+    acc = accuracy_score(y_test, y_pred)
+    st.success(f"🔍 Model Accuracy: {acc:.2f}")
+
+    st.markdown("### Enter Symptoms to Predict Disease Class")
+
+    # Create inputs dynamically for each feature
+    user_input = []
+    for col in X.columns:
+        val = st.slider(f"{col}", int(df[col].min()), int(df[col].max()), int(df[col].mean()))
+        user_input.append(val)
+
+    # Prediction
+    input_array = np.array(user_input).reshape(1, -1)
+    predicted_class = model.predict(input_array)[0]
+
+    st.success(f"✅ Predicted Disease Class: **{predicted_class}**")
+
+# Footer
 st.markdown("---")
-st.markdown("💡 Dataset Source: [UCI Dermatology Dataset](https://archive.ics.uci.edu/ml/datasets/Dermatology)")
-
+st.markdown("📘 Dataset Source: [UCI Dermatology Dataset](https://archive.ics.uci.edu/ml/datasets/Dermatology)")
