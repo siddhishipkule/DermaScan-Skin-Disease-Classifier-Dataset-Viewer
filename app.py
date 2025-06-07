@@ -6,7 +6,7 @@ st.title("🧴 DermaScan: Skin Disease Classifier Dataset Viewer")
 
 # Sidebar navigation
 st.sidebar.title("Navigation")
-option = st.sidebar.radio("Go to", ["Home", "Dataset", "Summary", "Graphs", "Predict"])
+option = st.sidebar.radio("Go to", ["Home", "Dataset","Graphs", "Predict"])
 
 # Column names
 column_names = [
@@ -45,11 +45,11 @@ elif option == "Dataset":
     st.subheader("📄 Dataset Preview")
     st.dataframe(df)
 
-elif option == "Summary":
+elif option == "Graphs":
     st.subheader("📊 Class Distribution")
     st.bar_chart(df['class'].value_counts())
 
-elif option == "Graphs":
+elif option == "Predict":
     st.subheader("🔍 Filter by Age and Class")
     min_age, max_age = int(df['age'].min()), int(df['age'].max())
     age_range = st.slider("Select Age Range", min_age, max_age, (min_age, max_age))
@@ -61,10 +61,6 @@ elif option == "Graphs":
 
     st.subheader("📌 Filtered Data")
     st.dataframe(filtered)
-
-elif option == "Predict":
-    st.subheader("🧠 Predict Disease (Coming Soon)")
-    st.info("This section will include a ML model to predict disease based on features.")
 
 st.markdown("---")
 st.markdown("💡 Dataset Source: [UCI Dermatology Dataset](https://archive.ics.uci.edu/ml/datasets/Dermatology)")
